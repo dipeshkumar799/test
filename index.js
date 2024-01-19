@@ -1,13 +1,15 @@
+// index.js (or index.mjs if using ES modules)
 import express from "express";
-import { connectToDatabase } from "./getting-started";
-connectToDatabase(); // Call the database connection function
-
+import authRoutes from "./routes/auth.js";
+import authNotes from "./routes/notes.js";
+import connectDB from "./db.js";
+connectDB();
 const app = express();
 const port = 4000;
+app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+app.use("/api/auth", authRoutes);
+app.use("/api/notes", authNotes);
 app.listen(port, () =>
   console.log(`Server is running on port at http://localhost:${port}`)
 );
