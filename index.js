@@ -1,7 +1,7 @@
-// index.js (or index.mjs if using ES modules)
 import express from "express";
-import authRoutes from "./routes/auth.js";
+import authRoutes from "./routes/Auth.js";
 import authNotes from "./routes/notes.js";
+
 import connectDB from "./db.js";
 connectDB();
 const app = express();

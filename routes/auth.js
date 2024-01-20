@@ -1,14 +1,61 @@
 import express from "express";
-import User from "../model/User";
+import User from "../model/User.js";
 import { body, validationResult } from "express-validator";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 const router = express.Router();
+const JWT_SECRET = "youaregoodboy";
+// for sinUp this code is used to create account if account is not found
 router.post(
   "/Signup",
   [
-    body("email").isEmail(),
-    body("password").isStrongPassword(),
-    body("name").isString(),
+    body("email", "Enter your valid email").isEmail(),
+    body("password", "Enter"),
+    body("name", "Name must be a string").isString(),
   ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.json({ errors: errors.array() });
+      }
+      const { email, password, name } = req.body;
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ errors: "Email is already registered" });
+      }
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(password, salt);
+      const newUser = await User.create({
+        email,
+        password: hash,
+        name,
+        isLogin: false,
+      });
+
+      const data = {
+        user: {
+          id: User.id,
+        },
+      };
+      const token = jwt.sign(data, JWT_SECRET);
+      res.json(token);
+      console.log(newUser);
+    } catch (error) {
+      console.error(error);
+      res.json({ error: "Internal Server Error" });
+    }
+  }
+);
+// for login this code is used  for login the account if account is created
+
+router.post(
+  "/login",
+  [
+    body("email", "please enter valid email").isEmail(),
+    body("password", "please enter valid password"),
+  ],
+
   async (req, res) => {
     try {
       const errors = await validationResult(req);
@@ -16,16 +63,33 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const user = await User.create({
-        email: req.body.email,
-        password: req.body.password,
-        name: req.body.name,
+      const { email, password } = req.body;
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        throw new Error("email doesn't match");
+      }
+
+      const match = await bcrypt.compare(password, user.password);
+
+      if (!match) {
+        throw new Error("password  doesn't match");
+      }
+      const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+        expiresIn: "1h", // You can set an expiration time for the token
       });
-      res.json(user);
-      console.log(user);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal Server Error" });
+
+      // Update the user's login status
+      user.isLogin = true;
+      const userUpdate = await user.save();
+
+      // Send the token in the response along with user information
+      res.status(200).json({ user: userUpdate, token });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({
+        error: err.message,
+      });
     }
   }
 );
