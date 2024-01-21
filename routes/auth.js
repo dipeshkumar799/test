@@ -4,6 +4,7 @@ import { body, validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import fetchUser from "../middleware/fetchUser.js";
+
 const router = express.Router();
 const JWT_SECRET = "youaregoodboy";
 // for sinUp this code is used to create account if account is not found

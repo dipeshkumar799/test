@@ -2,6 +2,7 @@ import express from "express";
 import Notes from "../model/Notes.js";
 import { body, validationResult } from "express-validator";
 import fetchUser from "../middleware/fetchUser.js";
+
 const router = express.Router();
 router.post(
   "/addnotes",
